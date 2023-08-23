@@ -17,6 +17,10 @@
 #include <stdio.h>
 #include <sys/time.h>
 
+# define PI 3.1415926535
+# define SPEED 5
+# define FPS 100.0
+
 typedef struct  s_data {
     void        *img;
     char        *addr;
@@ -36,6 +40,15 @@ typedef struct  s_va {
 	// int			kleft;
 	// int			kright;
 	int			player_pos;
+	int			score;
+	double		ball_posx;
+	double		ball_posy;
+	double		ball_vx;
+	double		ball_vy;
+	double		ball_angle;
+	int			ball_speed;
+
+
 
 	t_data		img;
 
@@ -176,13 +189,75 @@ void	draw_player(t_va *va)
 	}
 }
 
+void	draw_ball(t_va *va)
+{
+	int	i;
+	int	j;
+
+	int x = floor(va->ball_posx);
+	int y = floor(va->ball_posy);
+
+	i = 0;
+	while (i < 10)
+	{
+		j = 0;
+		while (j < 10)
+		{
+			if ((x - 5 + i) > 0 && (x - 5 + i) < va->win_x
+				&& (y - 5 + i) > 0 && (y - 5 + i) < va->win_y)
+				// my_mlx_pixel_put(va, va->win_x - 2 + i, y - 2 + j, 0x00FF0000);
+				mlx_pixel_put(va->mlx, va->win, x - 5 + i, y - 5 + j, 0xFFFFFF);
+			j++;
+		}
+		i++;
+	}
+}
+
 void uptdate_game(t_va *va)
 {
-	if (va->kup)
+	if (va->kup && va->player_pos > 50)
 		va->player_pos -= 10;
-	if (va->kdown)
+	if (va->kdown && va->player_pos < va->win_y - 50)
 		va->player_pos += 10;
-	
+
+	int out = 0;
+	if (va->ball_posx < 10)
+		out = 1;
+
+	va->ball_posx += va->ball_vx;
+	va->ball_posy += va->ball_vy;
+
+	//CONTACT
+	if (va->ball_posx <= 10 && !out
+			&& va->ball_posy > (va->player_pos - 50)
+			&& va->ball_posy < (va->player_pos + 50))
+	{
+		va->ball_vx = -va->ball_vx * 1.2;
+		va->ball_vy *= 1.2;
+		++va->score;
+	}
+
+	if (va->ball_posx >= va->win_x)
+		va->ball_vx = -va->ball_vx;
+	if (va->ball_posy <= 0 || va->ball_posy >= va->win_y)
+		va->ball_vy = -va->ball_vy;
+
+	if (va->ball_posx <= 0 &&
+			(va->ball_posy < (va->player_pos - 50)
+			|| va->ball_posy > (va->player_pos + 50)))
+	{
+		va->ball_posx = va->win_x / 2;
+		va->ball_posy = va->win_y / 2;
+		
+		va->ball_vx = va->ball_speed * sin(va->ball_angle);
+		va->ball_vy = va->ball_speed * cos(va->ball_angle);
+
+		printf("SCORE : %d\n", va->score);
+		va->score = 0;
+	}
+
+
+
 	// mlx_clear_window(va->mlx, va->win);
 	// draw_player(va);
 }
@@ -200,6 +275,7 @@ int game_loop(t_va *va)
 
 			mlx_clear_window(va->mlx, va->win);
 			draw_player(va);
+			draw_ball(va);
 		}
 
 		// mlx_clear_window(va->mlx, va->win);
@@ -217,14 +293,25 @@ void	init_va(t_va *va)
 	va->kup = 0;
 	va->kdown = 0;
 	va->player_pos = va->win_y / 2;
+	va->score = 0;
 //	va->kleft = 0;
 //	va->kright = 0;
 //	va->set_c = 0;
 //	va->palet_nbr = 0;
 
+	va->ball_angle = PI / 3;
+	va->ball_speed = SPEED;
+
+	va->ball_posx = va->win_x / 2;
+	va->ball_posy = va->win_y / 2;
+	va->ball_vx = va->ball_speed * sin(va->ball_angle);
+	va->ball_vy = va->ball_speed * cos(va->ball_angle);
+	
+
+
 	va->prev_time = get_time_us();
 	va->delta_time = 0.0;
-	va->target_frame_time = 1.0 / 50.0; // 50 FPS
+	va->target_frame_time = 1.0 / FPS; // 50 FPS
 
 
 	va->img.img = mlx_new_image(va->mlx, va->win_x, va->win_y);
