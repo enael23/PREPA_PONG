@@ -38,6 +38,12 @@ typedef struct  s_va {
 	int			player_pos;
 
 	t_data		img;
+
+	unsigned long prev_time;
+	unsigned long current_time;
+	double delta_time;
+	double target_frame_time;
+
 }               t_va;
 
 unsigned long get_time_us()
@@ -153,17 +159,17 @@ void	draw_player(t_va *va)
 	int	i;
 	int	j;
 
-	int y = 10;
+	int x = 10;
 
 	i = 0;
 	while (i < 4)
 	{
 		j = 0;
-		while (j < 4)
+		while (j < 100)
 		{
-			if ((va->player_pos - 2 + i) < va->win_x && (y - 2 + j) < va->win_y)
+			if ((va->player_pos - 50 + j) < va->win_y)
 				// my_mlx_pixel_put(va, va->win_x - 2 + i, y - 2 + j, 0x00FF0000);
-				mlx_pixel_put(va->mlx, va->win, va->player_pos - 2 + i, y - 2 + j, 0xFFFFFF);
+				mlx_pixel_put(va->mlx, va->win, x - 2 + i, va->player_pos - 50 + j, 0xFFFFFF);
 			j++;
 		}
 		i++;
@@ -173,12 +179,32 @@ void	draw_player(t_va *va)
 void uptdate_game(t_va *va)
 {
 	if (va->kup)
-		va->player_pos += 10;
-	if (va->kdown)
 		va->player_pos -= 10;
+	if (va->kdown)
+		va->player_pos += 10;
 	
-	mlx_clear_window(va->mlx, va->win);
-	draw_player(va);
+	// mlx_clear_window(va->mlx, va->win);
+	// draw_player(va);
+}
+
+int game_loop(t_va *va)
+{
+		va->current_time = get_time_us();
+		va->delta_time += (va->current_time - va->prev_time) / 1000000.0;
+		va->prev_time =  va->current_time;
+
+		while (va->delta_time >= va->target_frame_time)
+		{
+			uptdate_game(va);
+			va->delta_time -= va->target_frame_time;
+
+			mlx_clear_window(va->mlx, va->win);
+			draw_player(va);
+		}
+
+		// mlx_clear_window(va->mlx, va->win);
+		// draw_player(va);
+		return(0);
 }
 
 void	init_va(t_va *va)
@@ -190,11 +216,16 @@ void	init_va(t_va *va)
 
 	va->kup = 0;
 	va->kdown = 0;
-	va->player_pos = va->win_x / 2;
+	va->player_pos = va->win_y / 2;
 //	va->kleft = 0;
 //	va->kright = 0;
 //	va->set_c = 0;
 //	va->palet_nbr = 0;
+
+	va->prev_time = get_time_us();
+	va->delta_time = 0.0;
+	va->target_frame_time = 1.0 / 50.0; // 50 FPS
+
 
 	va->img.img = mlx_new_image(va->mlx, va->win_x, va->win_y);
     va->img.addr = mlx_get_data_addr(va->img.img, &(va->img.bits_per_pixel), &(va->img.line_length), &(va->img.endian));
@@ -217,35 +248,36 @@ int             main(int ac, char **av)
 	// mlx_hook(va.win, 33, 1L << 17, ft_close, &va);
     // mlx_loop(va.mlx);
 	
-	// mlx_hook(va.win, 2, 1L << 0, key_press, &va);
-	// mlx_loop_hook(va->mlx, key_move, va);
-	// mlx_hook(va.win, 3, 1L << 1, key_release, &va);
-	// mlx_hook(va.win, 33, 1L << 17, ft_close, &va);
+	mlx_hook(va.win, 2, 1L << 0, key_press, &va);
+	mlx_loop_hook(va.mlx, game_loop, &va);
+	mlx_hook(va.win, 3, 1L << 1, key_release, &va);
+	mlx_hook(va.win, 33, 1L << 17, ft_close, &va);
+	mlx_loop(va.mlx);
 
-	mlx_key_hook(va.win, key_press, &va);
-	mlx_key_hook(va.win, key_release, &va);
+	// mlx_key_hook(va.win, key_press, &va);
+	// mlx_key_hook(va.win, key_release, &va);
 
-	unsigned long prev_time = get_time_us();
-	unsigned long current_time;
-	double delta_time = 0.0;
-	const double target_frame_time = 1.0 / 2.0; // 2 FPS
+	// unsigned long prev_time = get_time_us();
+	// unsigned long current_time;
+	// double delta_time = 0.0;
+	// const double target_frame_time = 1.0 / 2.0; // 2 FPS
 
-	while (1)
-	{
-		current_time = get_time_us();
-		delta_time += (current_time - prev_time) / 1000000.0;
-		prev_time =  current_time;
+	// while (1)
+	// {
+	// 	current_time = get_time_us();
+	// 	delta_time += (current_time - prev_time) / 1000000.0;
+	// 	prev_time =  current_time;
 
-		while (delta_time >= target_frame_time)
-		{
-			uptdate_game(&va);
-			delta_time -= target_frame_time;
-		}
+	// 	while (delta_time >= target_frame_time)
+	// 	{
+	// 		uptdate_game(&va);
+	// 		delta_time -= target_frame_time;
+	// 	}
 
-		// mlx_clear_window(va.mlx, va.win);
-		// draw_player(&va);
-		// mlx_flush_image(va.mlx, va.win);
-	}
+	// 	mlx_clear_window(va.mlx, va.win);
+	// 	draw_player(&va);
+	// 	// mlx_flush_image(va.mlx, va.win);
+	// }
 	
 	
 	return (0);
