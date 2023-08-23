@@ -15,6 +15,7 @@
 #include <stdlib.h>
 
 #include <stdio.h>
+#include <sys/time.h>
 
 typedef struct  s_data {
     void        *img;
@@ -29,23 +30,22 @@ typedef struct  s_va {
     void        *win;
 	int			win_x;
 	int			win_y;
-	double		i0;
-	double		j0;
-	int			max_it;
-	double		cRe;
-	double		cIm;
-	double		zoom;
+
 	int			kup;
 	int			kdown;
-	int			kleft;
-	int			kright;
-	int			palet_nbr;
-	int			set_c;
-	int			(*palet[4])();
-	void		(*draw)();
+	// int			kleft;
+	// int			kright;
+	int			player_pos;
+
 	t_data		img;
 }               t_va;
 
+unsigned long get_time_us()
+{
+	struct timeval tv;
+	gettimeofday(&tv, NULL);
+	return (unsigned long)tv.tv_sec * 1000000 + tv.tv_usec;
+}
 
 void            my_mlx_pixel_put(t_data *data, int x, int y, int color)
 {
@@ -69,277 +69,116 @@ int	ft_close(t_va *va)
 	exit(0);
 }
 
-int	ft_rainbow(double f)
+
+// int             key_hook(int keycode, t_va *va)
+// {
+// printf("KEYCODE = %d\n", keycode);	
+// 	if (keycode == 65307)
+// 		ft_close(va);
+// 	else if (keycode == 65307)
+// 		ft_close(va);
+// 	//print_infos(va);
+// 	va->draw(va);
+//     return (0);
+// }
+
+// int             motion_notif(int x, int y, t_va *va)
+// {
+// 	if (va->set_c && va->draw == draw_julia)
+// 	{
+// 		va->cRe = ((x - va->i0) / va->zoom)/300;
+// 		va->cIm = ((y - va->j0) / va->zoom)/300;
+// 		va->draw(va);
+// 	}
+// 	return (0);
+// }
+
+int	key_press(int keycode, t_va *va)
 {
-	int color;
-
-	if (f <= 0.2)
-		color = 0x00000000 + ((int)(f * 5 * 255) << 16);
-	else if (f <= 0.4)
-		color = 0x00FF0000 + ((int)((f - 0.2) * 5 * 255) << 8);
-	else if (f <= 0.6)
-		color = 0x00FFFF00 - ((int)((f - 0.4) * 5 * 255) << 16);
-	else if (f <= 0.8)
-		color = 0x0000FF00 + ((int)((f - 0.6) * 5 * 255));
-	else
-		color = 0x0000FFFF - ((int)((f - 0.8) * 5 * 255) << 8);
-	return (color);
-}
-
-/* blanc jaune rouge noir */
-
-int	ft_wyrb(double f)
-{
-	int color;
-
-	if (f <= (1 / 3.))
-		color = 0x00FFFFFF - ((int)(f * 3. * 255));
-	else if (f <= (2 / 3.))
-		color = 0x00FFFF00 - ((int)((f - (1. / 3.)) * 3. * 255) << 8);
-	else
-		color = 0x00FF0000 - ((int)((f - (2. / 3.)) * 3. * 255) << 16);
-return (color);
-}
-
-int	ft_wbrbbwrb(double f)
-{
-	int color;
-
-	if (f <= (1 / 7.)) /* bleu -> blanc */
-		color = 0x000000FF + ((int)(f * 7. * 255) << 8) + ((int)(f * 7. * 255) << 16);
-	else if (f <= (2 / 7.)) /* blanc -> rouge */
-		color = 0x00FFFFFF - ((int)((f - (1. / 7.)) * 7. * 255) << 8) 
-			- ((int)((f - (1. / 7.)) * 7. * 255));
-	else if (f <= (3 / 7.)) /* rouge -> noir */
-		color = 0x00FF0000 - ((int)((f - (2. / 7.)) * 7. * 255) << 16);
-	else if (f <= (4 / 7.)) /* noir -> bleu */
-		color = 0x00000000 + ((int)((f - (3. / 7.)) * 7. * 255));
-	else if (f <= (5 / 7.)) /* bleu -> blanc */
-		color = 0x000000FF + ((int)((f - (4. / 7.)) * 7. * 255) << 8) 
-			+ ((int)((f - (4. / 7.)) * 7. * 255) << 16);
-	else if (f <= (6 / 7.)) /* blanc -> rouge */
-		color = 0x00FFFFFF - ((int)((f - (5. / 7.)) * 7. * 255) << 8) 
-			- ((int)((f - (5. / 7.)) * 7. * 255));
-	else /* rouge -> noir */
-		color = 0x00FF0000 - ((int)((f - (6. / 7.)) * 7. * 255) << 16);
-	return (color);
-}
-
-/* JULIA */
-void	draw_julia(t_va *va)
-{
-	int i = 0;
-	int j = 0;
-	int	iter;
-	double	Re;
-	double	Im;
-	double	oldRe;
-	double	oldIm;
-	double	degrad;
-	
-	while (i < va->win_x)
-	{
-		j = 0;
-		while (j < va->win_y)
-		{
-			Re = ((i - va->i0) / va->zoom)/300;
-			Im = ((j - va->j0) / va->zoom)/300;
-			iter = 0;
-			while (++iter < va->max_it)
-			{
-				oldRe = Re;
-				oldIm = Im;
-				Re = oldRe * oldRe - oldIm * oldIm + va->cRe;
-				Im = 2 * oldRe * oldIm + va->cIm;
-				if ((Re * Re + Im * Im) > 4)
-					break;
-			}
-			degrad = 1.0 * iter / va->max_it;
-		//	my_mlx_pixel_put(&(va->img), i, j, ft_rainbow(degrad));
-			my_mlx_pixel_put(&(va->img), i, j, (va->palet)[va->palet_nbr](degrad));
-			j++;
-		}
-		i++;
-	}
-	mlx_put_image_to_window(va->mlx, va->win, va->img.img, 0, 0);
-}
-
-/* MANDELBROT */
-void	draw_mandel(t_va *va)
-{
-	int i = 0;
-	int j = 0;
-	int	iter;
-	double	Re;
-	double	Im;
-	double	oldRe;
-	double	oldIm;
-	double	cRe;
-	double	cIm;
-	double	degrad;
-	
-	while (i < va->win_x)
-	{
-		j = 0;
-		while (j < va->win_y)
-		{
-			cRe = ((i - va->i0) / va->zoom)/300;
-			cIm = ((j - va->j0) / va->zoom)/300;
-			Re = 0.;
-			Im = 0.;
-			iter = 0;
-			while (++iter < va->max_it)
-			{
-				oldRe = Re;
-				oldIm = Im;
-				Re = oldRe * oldRe - oldIm * oldIm + cRe;
-				Im = 2 * oldRe * oldIm + cIm;
-				if ((Re * Re + Im * Im) > 4)
-					break;
-			}
-			degrad = 1.0 * iter / va->max_it;
-			my_mlx_pixel_put(&(va->img), i, j, (va->palet)[va->palet_nbr](degrad));
-			j++;
-		}
-		i++;
-	}
-	mlx_put_image_to_window(va->mlx, va->win, va->img.img, 0, 0);
-}
-
-
-double ft_absdbl(double a)
-{
-	if (a < 0)
-		a = -a;
-	return (a);
-}
-
-/*  BURNING SHIP */
-void	draw_burn(t_va *va)
-{
-	int i = 0;
-	int j = 0;
-	int	iter;
-	double	Re;
-	double	Im;
-	double	oldRe;
-	double	oldIm;
-	double	cRe;
-	double	cIm;
-	double	degrad;
-	
-	while (i < va->win_x)
-	{
-		j = 0;
-		while (j < va->win_y)
-		{
-			cRe = ((i - va->i0) / va->zoom)/300;
-			cIm = ((j - va->j0) / va->zoom)/300;
-			Re = 0.;
-			Im = 0.;
-			iter = 0;
-			while (++iter < va->max_it)
-			{
-				oldRe = Re;
-				oldIm = Im;
-				Re = oldRe * oldRe - oldIm * oldIm + cRe;
-				Im = 2 * ft_absdbl(oldRe * oldIm) + cIm;
-				if ((Re * Re + Im * Im) > 4)
-					break;
-			}
-			degrad = 1.0 * iter / va->max_it;
-			my_mlx_pixel_put(&(va->img), i, j, (va->palet)[va->palet_nbr](degrad));
-			j++;
-		}
-		i++;
-	}
-	mlx_put_image_to_window(va->mlx, va->win, va->img.img, 0, 0);
-}
-
-
-int				mouse_hook(int button, int x, int y, t_va *va)
-{
-	if (button == 1)
-	{
-		va->i0 -= (x - (va->win_x / 2));
-		va->j0 -= (y - (va->win_y / 2));
-	}
-	else if (button == 5)
-	{
-		va->zoom *= 2;
-		va->i0 -= (x - (va->i0));
-		va->j0 -= (y - (va->j0));
-	}
-	else if (button == 4)
-	{
-		va->zoom /= 2;
-		va->i0 += (x - (va->i0)) / 2;
-		va->j0 += (y - (va->j0)) / 2;
-	}
-	va->draw(va);
-	return (0);
-}
-
-void	print_infos(t_va *va)
-{
-	printf("Max_IT = %d, zoom = x%.2f, x = %.2f, y = %.2f, palet = %d\n", va->max_it, va->zoom,
-			(va->i0 - va->win_x / 2), (va->i0 - va->win_x / 2), va->palet_nbr);
-}
-
-int             key_hook(int keycode, t_va *va)
-{
-printf("KEYCODE = %d\n", keycode);	
 	if (keycode == 65307)
 		ft_close(va);
-	else if (keycode == 116)
-		va->max_it += 50;
-	else if (keycode == 103 && va->max_it > 50)
-		va->max_it -= 50;	
-	else if (keycode == 124 || keycode == 65363)
-		va->i0 -= 100;
-    else if (keycode == 123 || keycode == 65361)
-		va->i0 += 100;
-    else if (keycode == 126 || keycode == 65362)
-		va->j0 += 100;
-    else if (keycode == 125 || keycode == 65364)
-		va->j0 -= 100;
-	else if (keycode == 119)
-	{
-		va->zoom *= 2;
-		va->i0 -= ((va->win_x / 2) - (va->i0));
-		va->j0 -= ((va->win_y / 2) - (va->j0));
-	}
-	else if (keycode == 115)
-	{
-		va->zoom /= 2;
-		va->i0 += ((va->win_x / 2) - (va->i0)) / 2;
-		va->j0 += ((va->win_y / 2) - (va->j0)) / 2;
-	}
-	else if (keycode == 32)
-	{
-		if (va->palet_nbr < 2)
-			(va->palet_nbr)++;
-		else
-			va->palet_nbr = 0;
-	}
-	else if (keycode == 99)
-		va->set_c = !(va->set_c);
-	else if (keycode == 65307)
-		ft_close(va);
-	print_infos(va);
-	va->draw(va);
-    return (0);
+		// clean_exit(va);
+	// if (keycode == 115 || keycode == 1)
+	// 	va->ks = 1;
+	// if (keycode == 97 || keycode == 113 || keycode == 0)
+	// 	va->kq = 1;
+	// if (keycode == 122 || keycode == 119 || keycode == 13)
+	// 	va->kz = 1;
+	// if (keycode == 100 || keycode == 2)
+	// 	va->kd = 1;
+	// if (keycode == 124 || keycode == 65363)
+	// 	va->kleft = 1;
+	// if (keycode == 123 || keycode == 65361)
+	// 	va->kright = 1;
+	if (keycode == 126 || keycode == 65362)
+		va->kup = 1;
+	if (keycode == 125 || keycode == 65364)
+		va->kdown = 1;
+	// key_press_map(keycode, va);
+	return (0);
 }
 
-int             motion_notif(int x, int y, t_va *va)
+int	key_release(int keycode, t_va *va)
 {
-	if (va->set_c && va->draw == draw_julia)
-	{
-		va->cRe = ((x - va->i0) / va->zoom)/300;
-		va->cIm = ((y - va->j0) / va->zoom)/300;
-		va->draw(va);
-	}
+	// if (keycode == 115 || keycode == 1)
+	// 	va->ks = 0;
+	// if (keycode == 97 || keycode == 113 || keycode == 0)
+	// 	va->kq = 0;
+	// if (keycode == 122 || keycode == 119 || keycode == 13)
+	// 	va->kz = 0;
+	// if (keycode == 100 || keycode == 2)
+	// 	va->kd = 0;
+	// if (keycode == 124 || keycode == 65363)
+	// 	va->kleft = 0;
+	// if (keycode == 123 || keycode == 65361)
+	// 	va->kright = 0;
+	if (keycode == 126 || keycode == 65362)
+		va->kup = 0;
+	if (keycode == 125 || keycode == 65364)
+		va->kdown = 0;
 	return (0);
+}
+
+// void	engine(t_va *va)
+// {
+// 	mlx_hook(va->win, 2, 1L << 0, key_press, va);
+// 	mlx_loop_hook(va->mlx, key_move, va);
+// 	mlx_hook(va->win, 3, 1L << 1, key_release, va);
+// 	mlx_hook(va->win, 33, 1L << 17, clean_exit, va);
+// 	mlx_loop(va->mlx);
+// }
+
+void	draw_player(t_va *va)
+{
+	int	i;
+	int	j;
+
+	int y = 10;
+
+	i = 0;
+	while (i < 4)
+	{
+		j = 0;
+		while (j < 4)
+		{
+			if ((va->player_pos - 2 + i) < va->win_x && (y - 2 + j) < va->win_y)
+				// my_mlx_pixel_put(va, va->win_x - 2 + i, y - 2 + j, 0x00FF0000);
+				mlx_pixel_put(va->mlx, va->win, va->player_pos - 2 + i, y - 2 + j, 0xFFFFFF);
+			j++;
+		}
+		i++;
+	}
+}
+
+void uptdate_game(t_va *va)
+{
+	if (va->kup)
+		va->player_pos += 10;
+	if (va->kdown)
+		va->player_pos -= 10;
+	
+	mlx_clear_window(va->mlx, va->win);
+	draw_player(va);
 }
 
 void	init_va(t_va *va)
@@ -347,59 +186,67 @@ void	init_va(t_va *va)
 	va->win_x = 600;
 	va->win_y = 600;
     va->mlx = mlx_init();
-    va->win = mlx_new_window(va->mlx, va->win_x, va->win_y, "Fractol Explorer");
-	va->i0 = va->win_x / 2;
-	va->j0 = va->win_y / 2;
-	va->max_it = 300;
-	va->cRe = -0.7;
-	va->cIm = 0.27015;
-	va->zoom = 1;
+    va->win = mlx_new_window(va->mlx, va->win_x, va->win_y, "Pong Arena");
+
 	va->kup = 0;
 	va->kdown = 0;
-	va->kleft = 0;
-	va->kright = 0;
-	va->set_c = 0;
-	va->palet_nbr = 0;
-	(va->palet)[0] = ft_rainbow;
-	(va->palet)[1] = ft_wyrb;
-	(va->palet)[2] = ft_wbrbbwrb;
+	va->player_pos = va->win_x / 2;
+//	va->kleft = 0;
+//	va->kright = 0;
+//	va->set_c = 0;
+//	va->palet_nbr = 0;
+
 	va->img.img = mlx_new_image(va->mlx, va->win_x, va->win_y);
     va->img.addr = mlx_get_data_addr(va->img.img, &(va->img.bits_per_pixel), &(va->img.line_length), &(va->img.endian));
 }
 
-int	ft_strcmp(char *s1, char *s2)
-{
-	unsigned int	i;
-
-	i = 0;
-	while ((s1[i]) && (s2[i]) && (s1[i] == s2[i]))
-		i++;
-	return (((unsigned char)s1[i]) - ((unsigned char)s2[i]));
-}
-
 int             main(int ac, char **av)
 {
+	(void)ac;
+	(void)av;
     t_va      va;
 
 	init_va(&va);    
-	if (ac != 2)
-		ft_close(&va);
-	if (ft_strcmp(av[1], "mandelbrot") == 0)
-		va.draw = draw_mandel;
-	else if (ft_strcmp(av[1], "julia") == 0)
-		va.draw = draw_julia;
-	else if (ft_strcmp(av[1], "burningship") == 0)
-		va.draw = draw_burn;
-	else 
-		ft_close(&va);
-	if (va.draw == NULL)
-		ft_close(&va);
+	// if (va.draw == NULL)
+	// 	ft_close(&va);
 
-	va.draw(&va);
-	mlx_key_hook(va.win, key_hook, &va);
-	mlx_mouse_hook(va.win, mouse_hook, &va);
-    mlx_hook(va.win, 6, 1L<<6, motion_notif, &va);
-	mlx_hook(va.win, 33, 1L << 17, ft_close, &va);
-    mlx_loop(va.mlx);
+	// va.draw(&va);
+	// mlx_key_hook(va.win, key_hook, &va);
+	// mlx_mouse_hook(va.win, mouse_hook, &va);
+    // mlx_hook(va.win, 6, 1L<<6, motion_notif, &va);
+	// mlx_hook(va.win, 33, 1L << 17, ft_close, &va);
+    // mlx_loop(va.mlx);
+	
+	// mlx_hook(va.win, 2, 1L << 0, key_press, &va);
+	// mlx_loop_hook(va->mlx, key_move, va);
+	// mlx_hook(va.win, 3, 1L << 1, key_release, &va);
+	// mlx_hook(va.win, 33, 1L << 17, ft_close, &va);
+
+	mlx_key_hook(va.win, key_press, &va);
+	mlx_key_hook(va.win, key_release, &va);
+
+	unsigned long prev_time = get_time_us();
+	unsigned long current_time;
+	double delta_time = 0.0;
+	const double target_frame_time = 1.0 / 2.0; // 2 FPS
+
+	while (1)
+	{
+		current_time = get_time_us();
+		delta_time += (current_time - prev_time) / 1000000.0;
+		prev_time =  current_time;
+
+		while (delta_time >= target_frame_time)
+		{
+			uptdate_game(&va);
+			delta_time -= target_frame_time;
+		}
+
+		// mlx_clear_window(va.mlx, va.win);
+		// draw_player(&va);
+		// mlx_flush_image(va.mlx, va.win);
+	}
+	
+	
 	return (0);
 } 
