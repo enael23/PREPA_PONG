@@ -38,7 +38,7 @@ function setup() {
   b1_x = width / 3;
   b1_y = height / 3;
   
-  b1_Speed = 10;
+  b1_Speed = 5;
   b1_angle = random(1,10);
   b1_xSpeed = b1_Speed * cos(b1_angle);
   b1_ySpeed = b1_Speed * sin(b1_angle);
@@ -46,7 +46,7 @@ function setup() {
   b2_x = 2 * width / 3;
   b2_y = 2 * height / 3;
 	
-  b2_Speed = 5;
+  b2_Speed = 1;
   b2_angle = random(1,10);
   b2_xSpeed = b1_Speed * cos(b2_angle);
   b2_ySpeed = b1_Speed * sin(b2_angle);
@@ -79,7 +79,9 @@ function draw() {
     b1_ySpeed = -b1_ySpeed;
   }
   
-  if (balls_dist(b1_x, b1_y, b2_x, b2_y) < b1_radius + b2_radius)
+  if (balls_dist(b1_x, b1_y, b2_x, b2_y) < b1_radius + b2_radius
+      && !(b1_x > width - b1_radius || b1_x < b1_radius)
+      && !(b1_y > height - b1_radius || b1_y < b1_radius))
   {
     b1_xSpeed = (b1_x - b2_x) / balls_dist(b1_x, b1_y, b2_x, b2_y) * b1_Speed;
     b1_ySpeed = (b1_y - b2_y) / balls_dist(b1_x, b1_y, b2_x, b2_y) * b1_Speed;
@@ -92,16 +94,18 @@ function draw() {
   b2_y += b2_ySpeed;
   
   if (b2_x > width - b2_radius || b2_x < b2_radius) {
-    // b2_xSpeed = -b2_xSpeed;     //bounce
-    b2_x = (b2_x+width)%width;  //go through
+    b2_xSpeed = -b2_xSpeed;     //bounce
+    // b2_x = (b2_x+width)%width;  //go through
   } 
   
   if (b2_y > height - b2_radius || b2_y < b2_radius) {
-    // b2_ySpeed = -b2_ySpeed;      //bounce
-    b2_y = (b2_y+height)%height; //go through
+    b2_ySpeed = -b2_ySpeed;      //bounce
+    // b2_y = (b2_y+height)%height; //go through
   }
   
-  if (balls_dist(b1_x, b1_y, b2_x, b2_y) < b1_radius + b2_radius)
+  if (balls_dist(b1_x, b1_y, b2_x, b2_y) < b1_radius + b2_radius
+      && !(b2_x > width - b2_radius || b2_x < b2_radius)
+      && !(b2_y > height - b2_radius || b2_y < b2_radius))
   {
     b2_xSpeed = (b2_x - b1_x) / balls_dist(b1_x, b1_y, b2_x, b2_y) * b2_Speed;
     b2_ySpeed = (b2_y - b1_y) / balls_dist(b1_x, b1_y, b2_x, b2_y) * b2_Speed;
