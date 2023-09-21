@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <input type="text" id="messageBox" />
+    <button onclick="envoyerMessage()">Envoyer</button><br/>
+    <div id="messagesPrints"></div>
+
+    <script src="https://cdn.socket.io/4.3.2/socket.io.min.js"></script>
+    <script>
+        const socket = io('http://localhost:3000');
+        const message = document.getElementById('messageBox');
+        const messages = document.getElementById('messagesPrints');
+
+        socket.on('connect', ()=> console.log('Connected'));
+
+        socket.on('message', function(id, data){
+            messagesPrints.innerHTML += `<p> ${id} : ${data} <\p>`;
+        });
+
+        function envoyerMessage(){
+            socket.emit('message', messageBox.value);
+        }
+    </script>
+</body>
+</html>
